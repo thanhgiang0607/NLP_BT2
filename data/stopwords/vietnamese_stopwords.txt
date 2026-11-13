@@ -1,0 +1,9 @@
+# Bộ stopwords tiếng Việt (TV2 bổ sung bộ có sẵn, ví dụ vietnamese-stopwords)
+# Mỗi dòng 1 từ, từ ghép nối bằng dấu _ (sau khi tách từ)
+# Từ đặc thù báo chí:
+theo
+cho_biết
+ảnh
+video
+nguồn
+phóng_viên

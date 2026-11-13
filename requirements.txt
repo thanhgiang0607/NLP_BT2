@@ -1,0 +1,33 @@
+# Thu thập dữ liệu
+requests
+beautifulsoup4
+lxml
+newspaper3k
+lxml_html_clean
+
+# Tiền xử lý tiếng Việt
+underthesea
+pyvi
+
+# Biểu diễn, giảm chiều, phân cụm
+numpy
+pandas
+scikit-learn
+scikit-learn-extra
+gensim
+umap-learn
+
+# Sinh chủ đề
+spacy
+google-genai
+python-dotenv
+
+# Trực quan + demo
+matplotlib
+seaborn
+wordcloud
+plotly
+streamlit
+
+# Notebook
+jupyter
