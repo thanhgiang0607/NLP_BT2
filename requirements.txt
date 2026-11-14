@@ -13,7 +13,7 @@ pyvi
 numpy
 pandas
 scikit-learn
-scikit-learn-extra
+kmedoids
 gensim
 umap-learn
 
