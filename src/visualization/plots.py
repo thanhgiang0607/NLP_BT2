@@ -134,8 +134,17 @@ def plot_scatter_2d(X, labels, method="tsne", title=None, name=None, coords=None
 
 
 # ---------------------------------------------------------------- Wordcloud
+# Font tiếng Việt đi kèm repo (Be Vietnam Pro). Không tìm thấy file thì dùng DejaVu Sans.
+FONT_DIR = config.ROOT / "assets" / "fonts"
+_VI_FONTS = ["BeVietnamPro-Regular.ttf", "NotoSans-Regular.ttf"]
+
+
 def _font_path():
-    """Đường dẫn font có dấu tiếng Việt cho wordcloud."""
+    """Đường dẫn font cho wordcloud: ưu tiên font tiếng Việt trong assets/fonts, không có thì DejaVu."""
+    for fname in _VI_FONTS:
+        path = FONT_DIR / fname
+        if path.exists():
+            return str(path)
     return font_manager.findfont(font_manager.FontProperties(family="DejaVu Sans"))
 
 

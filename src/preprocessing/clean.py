@@ -1,53 +1,42 @@
-"""Làm sạch văn bản: bỏ HTML, URL, số, ký tự đặc biệt, lowercase.
+"""Làm sạch văn bản tiếng Việt, chia làm 2 giai đoạn quanh bước tách từ (tokenizer.py).
 
-Phụ trách: Thanh Hằng
+Thứ tự đúng của cả quy trình:
+    strip_markup(text)  ->  tokenize(...)  ->  keep_words(tokens)  ->  remove_stopwords(...)
 
-Thứ tự xử lý (quan trọng, đừng đảo):
-    1. Chuẩn hóa Unicode NFC (tránh "ả" bị tách thành 2 ký tự khác nhau).
-    2. Bỏ thẻ HTML, bỏ URL / email.
-    3. Chữ thường (tuỳ chọn, xem lưu ý bên dưới).
-    4. Bỏ số (kể cả số có dấu . , như 1.200, 3,5).
-    5. Bỏ ký tự đặc biệt / dấu câu, chỉ giữ chữ cái (có dấu tiếng Việt) và khoảng trắng.
-    6. Gộp khoảng trắng.
-
-Bước làm sạch chạy TRƯỚC khi tách từ, để tách từ không bị nhiễu bởi dấu câu và số.
-
-LƯU Ý: pyvi/underthesea dùng chữ hoa để nhận ra tên riêng ("Việt Nam" -> "Việt_Nam").
-Nếu hạ chữ thường trước khi tách từ thì "việt nam" bị tách thành 2 từ rời. Vì vậy pipeline gọi
-clean_text(..., lowercase=False), tách từ xong mới hạ chữ thường từng token.
+Lý do tách từ TRƯỚC khi lọc dấu câu và số:
+    - Dấu câu là ranh giới giữa các cụm từ. Nếu bỏ dấu chấm, dấu phẩy trước thì pyvi nối nhầm các
+      từ ở hai bên, ví dụ "Hồng Quân, Phó Cục trưởng" thành "hồng_quân_phó_cục_trưởng".
+    - Số cũng vậy: bỏ số trước thì "U17 Việt Nam" thành "u việt nam" rồi bị nối thành "u_việt_nam".
+    - Giữ nguyên chữ hoa khi tách từ để pyvi nhận ra tên riêng ("Việt Nam" -> "Việt_Nam").
+      Hạ chữ thường chỉ làm sau khi tách từ.
 """
-"""Làm sạch văn bản: bỏ HTML, URL, số, ký tự đặc biệt, lowercase."""
 import re
 import unicodedata
 
-# Mỗi dòng dưới đây là một "mẫu" (regex) để tìm một loại nhiễu trong văn bản
-_HTML_TAG = re.compile(r"<[^>]+>")                      # thẻ HTML như <p>, </div>
-_HTML_ENTITY = re.compile(r"&[a-z]+;|&#\d+;")           # &nbsp; &amp; ...
+_HTML_TAG = re.compile(r"<[^>]+>")
+_HTML_ENTITY = re.compile(r"&[a-z]+;|&#\d+;")
 _URL = re.compile(r"(https?://\S+|www\.\S+)", re.IGNORECASE)
 _EMAIL = re.compile(r"\S+@\S+\.\S+")
-_NUMBER = re.compile(r"\d+")                            # mọi chuỗi chữ số
-# Giữ lại chuỗi chữ cái (kể cả có dấu tiếng Việt) và khoảng trắng; bỏ mọi thứ còn lại
-_NON_LETTER = re.compile(r"[^\W\d_]+|\s+", re.UNICODE)
-_SPACES = re.compile(r"\s+")
+_SPACES = re.compile(r"[ \t\r\f\v]+")
+# Token hợp lệ: chỉ gồm chữ cái, các âm tiết của từ ghép nối nhau bằng "_" (không có số, dấu câu)
+_WORD = re.compile(r"[^\W\d_]+(?:_[^\W\d_]+)*")
 
 
-def clean_text(text, lowercase: bool = True) -> str:
-    """Làm sạch một văn bản. lowercase=False để giữ chữ hoa (cần cho bước tách từ)."""
-    if not isinstance(text, str):                       # gặp ô trống thì trả về chuỗi rỗng
+def strip_markup(text) -> str:
+    # Giai đoạn 1 (TRƯỚC khi tách từ): chỉ bỏ "rác" kỹ thuật, giữ nguyên dấu câu, số và chữ hoa.
+    if not isinstance(text, str):                 # ô trống (NaN) thì trả về chuỗi rỗng
         return ""
-    text = unicodedata.normalize("NFC", text)           # thống nhất cách mã hóa dấu tiếng Việt
+    text = unicodedata.normalize("NFC", text)     # thống nhất cách mã hóa dấu tiếng Việt
     text = _HTML_TAG.sub(" ", text)
     text = _HTML_ENTITY.sub(" ", text)
     text = _URL.sub(" ", text)
     text = _EMAIL.sub(" ", text)
-    if lowercase:
-        text = text.lower()
-    text = _NUMBER.sub(" ", text)
-    # findall lấy ra các cụm chữ cái, dấu câu và ký hiệu bị loại, rồi nối lại bằng khoảng trắng
-    text = " ".join(_NON_LETTER.findall(text))
-    return _SPACES.sub(" ", text).strip()               # gộp nhiều khoảng trắng thành một
+    text = text.replace("\n", " . ")              # hết đoạn thì coi như hết câu, để pyvi không nối hai đoạn
+    return _SPACES.sub(" ", text).strip()
 
 
-def clean_corpus(texts, lowercase: bool = True) -> list[str]:
-    """Làm sạch cả một danh sách văn bản."""
-    return [clean_text(t, lowercase) for t in texts]
+def keep_words(tokens: list[str]) -> list[str]:
+    # Giai đoạn 2 (SAU khi tách từ): bỏ token là dấu câu, số, ký hiệu; hạ chữ thường các token còn lại.
+    # pyvi dính dấu chấm cuối câu vào chữ viết tắt in hoa ("AI.", "FIFA."), nên cắt dấu chấm cuối trước.
+    stripped = (t.rstrip(".") for t in tokens)
+    return [t.lower() for t in stripped if _WORD.fullmatch(t)]

@@ -6,7 +6,6 @@
 và
 với
 cùng
-cùng_với
 của
 là
 thì
@@ -21,7 +20,6 @@ nên
 vì
 vì_vậy
 do
-do_đó
 bởi
 bởi_vì
 nếu
@@ -53,18 +51,12 @@ sau
 trước
 khi
 lúc
-trong_khi
-trong_đó
 ngoài_ra
-bên_cạnh
 đồng_thời
 tuy_vậy
 như_vậy
 vậy
 thế
-thế_nên
-vậy_nên
-theo_đó
 hiện_nay
 hiện
 nay
@@ -152,11 +144,8 @@ phải
 cần
 có
 có_thể
-cũng_như
 thường
 luôn
-đã_từng
-lại_còn
 thêm
 nữa
 rồi
@@ -176,38 +165,26 @@ nhé
 nhỉ
 thôi
 đi
-thế_này
-như_thế
 thế_nào
-ra_sao
 
 # --- Động từ chung chung hay xuất hiện trong văn báo chí ---
 nói
-cho_biết
-cho_rằng
 chia_sẻ
-cho_hay
 nhận_định
 khẳng_định
-cho_thấy
 thông_tin
 làm
 làm_việc
 đưa
-đưa_ra
 thực_hiện
 tiếp_tục
 bắt_đầu
 tham_gia
 trở_thành
 trở_lại
-xảy_ra
-diễn_ra
-nhận_được
 thấy
 biết
 muốn
-đi_vào
 
 # --- Thời gian, thứ tự (không mang chủ đề) ---
 ngày
@@ -227,27 +204,16 @@ tuần
 quý
 đầu
 cuối
-cách_đây
 vừa_qua
-gần_đây
 mới_đây
-trước_đó
-sau_đó
-cùng_ngày
 thứ
-thứ_hai
 thứ_ba
 thứ_tư
-thứ_năm
 thứ_sáu
 thứ_bảy
 chủ_nhật
 đầu_tiên
-thứ_nhất
 lần
-lần_này
-lần_đầu
-lần_đầu_tiên
 
 # --- Từ đặc thù báo chí (phụ trách bổ sung) ---
 ảnh
@@ -257,7 +223,6 @@ clip
 nguồn
 phóng_viên
 bài
-bài_viết
 tin
 tin_tức
 báo
@@ -265,8 +230,6 @@ tòa_soạn
 biên_tập
 tác_giả
 xem
-xem_thêm
-đọc_thêm
 liên_quan
 chi_tiết
 cập_nhật
@@ -310,3 +273,8 @@ không_thể
 đặc_biệt
 nguyễn
 tp
+
+# --- Âm tiết lẻ: pyvi không ghép "diễn ra", "xảy ra", "bên cạnh" nên các âm tiết này bị tách rời và gây nhiễu ---
+diễn
+xảy
+cạnh

@@ -7,16 +7,17 @@ import argparse
 import pandas as pd
 
 from src import config
-from src.preprocessing.clean import clean_text
+from src.preprocessing.clean import keep_words, strip_markup
 from src.preprocessing.stopwords import load_stopwords, remove_stopwords
 from src.preprocessing.tokenizer import tokenize
 
 
 def preprocess_text(text: str, stopwords: set[str], backend: str = "pyvi") -> list[str]:
     """Văn bản thô -> danh sách token sạch (làm sạch, tách từ, hạ chữ thường, bỏ stopwords)."""
-    # Giữ chữ hoa khi tách từ để pyvi nhận ra tên riêng (Việt_Nam), rồi mới hạ chữ thường
-    tokens = tokenize(clean_text(text, lowercase=False), backend)
-    return remove_stopwords([t.lower() for t in tokens], stopwords)
+    # Tách từ khi còn dấu câu, số và chữ hoa (để pyvi nhận ra ranh giới cụm và tên riêng),
+    # rồi mới lọc dấu câu, số và hạ chữ thường
+    tokens = keep_words(tokenize(strip_markup(text), backend))
+    return remove_stopwords(tokens, stopwords)
 
 
 def build_clean(backend: str = "pyvi") -> pd.DataFrame:
