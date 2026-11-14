@@ -38,7 +38,7 @@
 | Công việc | Đầu ra (file) |
 |---|---|
 | Code Word2Vec/PhoW2V + LSA | `src/representation/embedding.py`, `src/features/lsa.py` (+ `src/features/lda.py` nếu làm thêm) |
-| Ma trận embedding + LSA (BoW + LSA, TF-IDF + LSA), chọn số chiều | 3 ma trận đặc trưng lưu trong `models/`, `notebooks/02_representation_lsa.ipynb` (biểu đồ explained variance) |
+| Ma trận embedding + LSA (BoW + LSA, TF-IDF + LSA), chọn số chiều | Hàm `load_features(name)` trong `src/features/lsa.py` (tạo + lưu 3 ma trận vào `models/`), `notebooks/02_representation_lsa.ipynb` (biểu đồ explained variance). Xem [Quy ước trao đổi TV3 ↔ TV4](#quy-ước-trao-đổi-tv3--tv4) |
 
 ## 4. Code: phân cụm + đánh giá — _TV4_
 
@@ -76,6 +76,49 @@ TV1 (articles.csv)
 - TV1 đẩy sớm một file mẫu ~20 bài (đúng định dạng cột) để TV2 viết code tiền xử lý trước khi crawl xong.
 - TV2–TV5 viết code dựa trên dữ liệu mẫu / ma trận ngẫu nhiên đúng shape, khi có dữ liệu thật chỉ cần chạy lại.
 - TV5 dựng khung Streamlit và test prompt Gemini với cụm giả ngay từ đầu.
+
+## Quy ước trao đổi TV3 ↔ TV4
+
+TV3 và TV4 **làm song song được**. TV2 đã xong `articles_clean.csv` và BoW/TF-IDF trên `main`, nên TV3 bắt đầu ngay. Chỉ bước chạy chính thức 6 thí nghiệm của TV4 mới cần chờ TV3.
+
+| Việc của TV4 | Cần chờ TV3? |
+|---|---|
+| Code K-Means, K-Medoids (`metric="cosine"`) | Không |
+| Code các chỉ số: Silhouette, Davies-Bouldin, Calinski-Harabasz, ARI, NMI, Purity | Không |
+| Code chọn k (Elbow, Silhouette) | Không |
+| Chạy thử toàn bộ code | Không. Tự tạo tạm TF-IDF + `TruncatedSVD(100)` từ `src/representation/bow_tfidf.py` |
+| Chạy chính thức 6 thí nghiệm, lập bảng so sánh | **Có**, cần đủ 3 ma trận của TV3 |
+
+### 1. Lấy ma trận đặc trưng qua hàm, không gửi file
+
+Thư mục `models/` bị `.gitignore` chặn, nên file `.npy` **không đi theo git**. TV3 cung cấp hàm, TV4 gọi hàm:
+
+```python
+# src/features/lsa.py (TV3)
+def load_features(name: str) -> np.ndarray:
+    """name ∈ {"bow_lsa", "tfidf_lsa", "embedding"}.
+    Trả về ma trận (119, d); chưa có trong models/ thì tự tạo rồi lưu."""
+```
+
+Trong lúc TV3 chưa xong, TV4 viết một hàm tạm **cùng tên, cùng kiểu trả về**, có TV3 thì chỉ đổi import.
+
+### 2. Quy ước ma trận
+
+| Mục | Quy ước |
+|---|---|
+| Thứ tự dòng | Trùng `data/processed/articles_clean.csv`: dòng i là bài `id` thứ i |
+| Kiểu dữ liệu | `numpy.ndarray` dày (không dùng ma trận thưa) |
+| Chuẩn hóa L2 | TV3 trả về **chưa chuẩn hóa**; TV4 tự chuẩn hóa trước K-Means. K-Medoids dùng cosine nên không cần |
+| Seed | `config.RANDOM_STATE` cho SVD, Word2Vec, K-Means, K-Medoids |
+| Nhãn thật | `true_label` chỉ dùng để tính ARI/NMI/Purity, **không** đưa vào ma trận |
+
+### 3. Hàm Purity
+
+`purity()` và `contingency()` hiện nằm trong `src/visualization/plots.py`. TV4 chuyển sang `src/evaluation/metrics.py`, rồi `plots.py` import lại từ đó, để cả nhóm dùng chung một cách tính.
+
+### 4. Cài K-Medoids sớm
+
+`sklearn_extra` (KMedoids) hay lỗi khi cài trên Python mới. TV4 cài thử ngay ngày đầu trong `.venv` Python 3.12 của nhóm. Không cài được thì chuyển sang thư viện `kmedoids` hoặc tự viết PAM, đừng để đến lúc chạy thí nghiệm mới phát hiện.
 
 ## Chưa phân công
 
