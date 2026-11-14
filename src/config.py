@@ -43,7 +43,7 @@ MAX_DF = 0.8
 NGRAM_RANGE = (1, 2)
 
 # LSA
-LSA_COMPONENTS = 100
+LSA_COMPONENTS = 80
 
 # Phân cụm
 K_RANGE = range(2, 13)
