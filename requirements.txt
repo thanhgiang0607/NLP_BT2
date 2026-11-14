@@ -31,3 +31,7 @@ streamlit
 
 # Notebook
 jupyter
+
+# Kiểm thử
+pytest
+
