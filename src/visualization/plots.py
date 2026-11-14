@@ -1,5 +1,6 @@
 """Biểu đồ EDA, scatter 2D (t-SNE/UMAP), wordcloud theo cụm, confusion matrix."""
 from collections import Counter
+from contextlib import contextmanager
 
 import matplotlib
 
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import font_manager
+from PIL import ImageDraw
 from sklearn.decomposition import TruncatedSVD
 from sklearn.manifold import TSNE
 
@@ -148,14 +150,48 @@ def _font_path():
     return font_manager.findfont(font_manager.FontProperties(family="DejaVu Sans"))
 
 
+class _BoxDraw(ImageDraw.ImageDraw):
+    """Khi wordcloud xếp chỗ (vẽ lên ảnh xám 'L'), tô kín cả khung chữ thay vì chỉ nét chữ.
+
+    Mặc định wordcloud chỉ coi điểm mực là đã chiếm chỗ, nên nhét từ nhỏ vào khe giữa chữ và
+    dấu tiếng Việt (vd. "vi phạm" nằm sát dấu nặng của "bộ" -> đọc thành "bô" + "vi phạm•").
+    Ảnh màu cuối cùng (mode RGB) vẫn vẽ chữ bình thường.
+    """
+
+    def text(self, xy, text, fill=None, font=None, *args, **kwargs):
+        if self.im.mode == "L":
+            self.rectangle(self.textbbox(xy, text, font=font), fill=fill)
+        else:
+            super().text(xy, text, fill, font, *args, **kwargs)
+
+
+@contextmanager
+def _box_layout():
+    """Tạm thay ImageDraw bên trong wordcloud bằng _BoxDraw (kiểm tra lại nếu nâng cấp wordcloud)."""
+    import wordcloud.wordcloud as wcmod
+
+    class _Shim:
+        Draw = staticmethod(lambda im, mode=None: _BoxDraw(im, mode))
+
+    orig, wcmod.ImageDraw = wcmod.ImageDraw, _Shim
+    try:
+        yield
+    finally:
+        wcmod.ImageDraw = orig
+
+
 def make_wordcloud(freqs: dict, color="#0072B2"):
     """Tạo 1 wordcloud từ dict {từ: tần suất}. Từ càng quan trọng thì chữ càng to."""
     from wordcloud import WordCloud
     freqs = {k.replace("_", " "): v for k, v in freqs.items()}  # hiển thị "bóng đá" thay vì "bóng_đá"
-    return WordCloud(width=700, height=420, background_color="white", font_path=_font_path(),
-                     max_words=60, prefer_horizontal=0.95, relative_scaling=0.5,
-                     color_func=lambda *a, **k: color, random_state=config.RANDOM_STATE
-                     ).generate_from_frequencies(freqs)
+    wc = WordCloud(width=700, height=420, background_color="white", font_path=_font_path(),
+                   # ít từ hơn + bỏ chữ quá nhỏ (min_font_size) + chênh lệch cỡ chữ vừa phải
+                   # (relative_scaling) để hình dày, chữ nào cũng đọc được
+                   max_words=35, min_font_size=16, margin=3, prefer_horizontal=0.95,
+                   relative_scaling=0.25,
+                   color_func=lambda *a, **k: color, random_state=config.RANDOM_STATE)
+    with _box_layout():
+        return wc.generate_from_frequencies(freqs)
 
 
 def group_frequencies(docs, labels, weights=None):
