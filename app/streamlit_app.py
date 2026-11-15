@@ -24,8 +24,10 @@ if str(ROOT) not in sys.path:
 
 # Nếu bấm Run hoặc chạy trực tiếp `python app/streamlit_app.py`, tự gọi `streamlit run` bằng Python của `.venv`
 if __name__ == "__main__" and "streamlit" not in sys.modules:
-    venv_py = ROOT / ".venv/Scripts/python.exe"
-    py = str(venv_py if venv_py.exists() else Path(sys.executable))
+    # Windows: .venv/Scripts/python.exe; macOS / Linux: .venv/bin/python
+    candidates = [ROOT / ".venv/Scripts/python.exe", ROOT / ".venv/bin/python"]
+    venv_py = next((p for p in candidates if p.exists()), None)
+    py = str(venv_py or Path(sys.executable))
     raise SystemExit(subprocess.run([py, "-m", "streamlit", "run", __file__, *sys.argv[1:]], cwd=ROOT).returncode)
 
 import joblib

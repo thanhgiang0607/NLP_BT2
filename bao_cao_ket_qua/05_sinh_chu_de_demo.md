@@ -64,7 +64,10 @@ load_features("bow_lsa") + run_kmeans(X, k=6)
 | 5 | **Quản lý nhà nước** | Tổng hợp các chỉ đạo, chính sách mới và hoạt động quản lý, điều hành của các cơ quan chức năng trên nhiều lĩnh vực đời sống, kinh tế và xã hội. | Thời sự | 0,5769 (15/26) |
 
 **Nhận xét đối chiếu:**
-- Dù **không hề nhận danh sách 6 nhãn thật**, Gemini vẫn khái quát hóa chính xác nội dung cả 6 cụm tương ứng với 6 chuyên mục gốc (*Công nghệ*, *Giải trí*, *Sức khỏe*, *Thể thao*, *Kinh tế*, *Thời sự*).
+- Dù **không nhận danh sách 6 nhãn thật**, Gemini đặt cho **4/6 cụm** (0, 1, 2, 4) tên gần như trùng chuyên mục gốc (*Công nghệ*, *Giải trí*, *Sức khỏe*, *Kinh tế*).
+- 2 cụm còn lại được đặt tên theo **nội dung thực tế của cụm** thay vì tên chuyên mục, và điều này phản ánh đúng việc cụm bị trộn hoặc hẹp hơn chuyên mục:
+  - Cụm **3** tên *Bóng đá Việt Nam*, hẹp hơn *Thể thao* vì đa số bài trong cụm là bóng đá, dù cụm còn có bài các môn khác (cờ tướng, bóng bàn).
+  - Cụm **5** tên *Quản lý nhà nước*, không phải *Thời sự*: chủ đề đa số chỉ chiếm 57,7%, cụm còn chứa bài Công nghệ về chính sách, chuyển đổi số và bài thu hồi sản phẩm của cơ quan chức năng.
 - Cụm **0 (60,0%)** ngoài 12 bài Công nghệ còn gom 6 bài Kinh tế liên quan tới tập đoàn công nghệ (Nvidia, Microsoft, Apple).
 - Cụm **5 (57,69%)** mang tên *Quản lý nhà nước* rất sát thực tế vì ngoài 15 bài Thời sự còn chứa 6 bài Công nghệ về chính sách quản lý và chuyển đổi số của bộ, ngành, địa phương (khớp với phân tích ở báo cáo phần 4).
 
@@ -97,12 +100,17 @@ load_features("bow_lsa") + run_kmeans(X, k=6)
 
 ### Cách chạy app demo
 
-App đã lưu sẵn kết quả tên chủ đề và tự gọi môi trường `.venv` khi chạy trực tiếp, nên chỉ cần **mở file `app/streamlit_app.py` rồi bấm Run** trong IDE, hoặc chạy 1 lệnh duy nhất ở thư mục gốc:
+App đã lưu sẵn kết quả tên chủ đề và tự gọi Python của `.venv` khi chạy trực tiếp (Windows: `.venv/Scripts/python.exe`, macOS / Linux: `.venv/bin/python`), nên chỉ cần **mở file `app/streamlit_app.py` rồi bấm Run** trong IDE, hoặc chạy ở thư mục gốc:
 
-```powershell
+```bash
+# Cách 1 (mọi hệ điều hành): tự tìm .venv rồi gọi streamlit run
 python app/streamlit_app.py
+
+# Cách 2: gọi thẳng streamlit trong .venv
+.venv/bin/streamlit run app/streamlit_app.py                  # macOS / Linux
+.\.venv\Scripts\streamlit.exe run app/streamlit_app.py        # Windows (PowerShell)
 ```
 
-Trình duyệt sẽ tự mở giao diện demo (không cần tạo `.env`, không cần gọi API Gemini).
+Trình duyệt sẽ tự mở giao diện demo (không cần tạo `.env`, không cần gọi API Gemini). Lần mở đầu trên máy mới clone mất thêm vài giây để tạo đặc trưng trong `models/`.
 
-*(Tùy chọn dành cho người muốn sinh lại tên chủ đề mới từ Gemini API: điền `GEMINI_API_KEY` vào `.env` rồi chạy `.\.venv\Scripts\python.exe -m src.topic_naming.gemini_namer`.)*
+*(Tùy chọn dành cho người muốn sinh lại tên chủ đề mới từ Gemini API: điền `GEMINI_API_KEY` vào `.env` rồi chạy `python -m src.topic_naming.gemini_namer` bằng Python của `.venv` — macOS / Linux: `.venv/bin/python -m src.topic_naming.gemini_namer`, Windows: `.\.venv\Scripts\python.exe -m src.topic_naming.gemini_namer`.)*
