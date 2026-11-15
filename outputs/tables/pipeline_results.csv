@@ -1,0 +1,7 @@
+representation,n_components,model,k,silhouette,davies_bouldin,calinski_harabasz,ari,nmi,purity
+bow_lsa,10,kmeans,6,0.4961,1.2978,32.3371,0.5155,0.5943,0.7479
+bow_lsa,10,kmedoids,6,0.478,1.3125,30.8168,0.5082,0.5854,0.7059
+tfidf_lsa,10,kmeans,6,0.4871,1.1994,30.4549,0.4655,0.5972,0.6807
+tfidf_lsa,10,kmedoids,6,0.4708,1.1661,27.7668,0.4641,0.5722,0.7059
+embedding,80,kmeans,6,0.2886,1.8865,15.549,0.4723,0.6048,0.6807
+embedding,80,kmedoids,6,0.2822,1.8317,15.1185,0.3907,0.5463,0.6387

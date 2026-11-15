@@ -19,11 +19,15 @@ cp .env.example .env               # rồi điền GEMINI_API_KEY
 ## Chạy
 
 ```bash
-python -m src.crawl.crawler        # crawl -> data/raw/
-python -m src.crawl.merge_data     # gộp -> data/processed/articles.csv
-python -m src.pipeline             # tiền xử lý -> đặc trưng -> 6 thí nghiệm -> outputs/
-streamlit run app/streamlit_app.py # demo
+python -m src.pipeline                 # gộp -> tiền xử lý -> đặc trưng -> 6 thí nghiệm -> kiểm tra tên chủ đề (~10 giây)
+python -m src.pipeline --from cluster  # chỉ chạy lại từ bước phân cụm
+python -m src.pipeline --crawl         # crawl lại dữ liệu mới trước (ghi đè data/raw, cần mạng)
+python -m src.pipeline --gemini        # sinh lại tên chủ đề bằng Gemini (cần GEMINI_API_KEY trong .env)
+
+python app/streamlit_app.py            # demo (tự dùng Python của .venv)
 ```
+
+Pipeline in tổng kết cuối và cảnh báo nếu kết quả lệch với kết quả đã lưu: nhãn cụm khác `outputs/tables/cluster_labels.csv`, hoặc tên chủ đề Gemini không còn khớp cụm. Kết quả chính thức (quét số chiều LSA và k) vẫn nằm ở `notebooks/03_clustering_experiments.ipynb`.
 
 ## Cấu trúc thư mục
 
