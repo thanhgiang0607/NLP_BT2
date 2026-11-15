@@ -43,7 +43,7 @@ MAX_DF = 0.8
 NGRAM_RANGE = (1, 2)
 
 # LSA
-LSA_COMPONENTS = 80
+LSA_COMPONENTS = 10  # chọn ở phần 4 (TV4): ARI/NMI tốt nhất khi phân cụm, xem bao_cao_ket_qua/04
 
 # Word2Vec (tách riêng khỏi LSA: đổi số chiều LSA không làm đổi Word2Vec)
 W2V_SIZE = 80

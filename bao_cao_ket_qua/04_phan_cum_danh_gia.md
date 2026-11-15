@@ -38,7 +38,16 @@ Chỉ số nội tại luôn tăng khi giảm số chiều (ít chiều thì đi
 | TF-IDF + LSA | **0,525** | 0,514 | 0,457 | 0,452 | 0,399 |
 | Embedding | — | — | — | — | 0,504 |
 
-10 và 20 chiều gần nhau; cả hai tốt hơn rõ 80 chiều (khớp nhận xét ở báo cáo phần 3).
+10 và 20 chiều gần nhau; cả hai tốt hơn rõ 80 chiều (khớp nhận xét ở báo cáo phần 3). Số chiều chọn được đã ghi vào `config.LSA_COMPONENTS = 10`.
+
+**Kết quả nhạy với số chiều.** Quét thêm các mức quanh 10 (K-Means, k = 6) cho thấy ARI dao động mạnh giữa các mức liền kề:
+
+| Số chiều | 3 | 5 | 8 | 10 | 15 |
+|---|---|---|---|---|---|
+| BoW + LSA (ARI) | 0,155 | 0,226 | 0,395 | **0,515** | 0,510 |
+| TF-IDF + LSA (ARI) | 0,376 | 0,510 | 0,447 | 0,465 | 0,511 |
+
+Vì vậy chênh lệch vài phần trăm giữa các cấu hình ở mục 4 (ví dụ ARI 0,516 so với 0,472) nằm trong mức dao động này, chưa đủ để khẳng định cấu hình nào tốt hơn hẳn. Kết luận chắc chắn hơn là xu hướng: **ít chiều (10–20) tốt hơn rõ nhiều chiều (50–80)**.
 
 ## 4. Bảng 6 thí nghiệm (số chiều đã chọn)
 
@@ -82,15 +91,17 @@ Xét cùng lúc ba mặt, không chỉ ARI/NMI vì nhãn gốc có nhiễu:
 
 Lỗi chủ yếu: Kinh tế bị chia đôi (6 bài sang cụm Công nghệ, đúng nhóm dễ lẫn Công nghệ ↔ Kinh tế ở báo cáo phần 2) và 6 bài Công nghệ rơi vào cụm Thời sự.
 
+**Hạn chế của cách chọn.** Số chiều LSA và k = 6 được chọn có dùng nhãn thật (ARI/NMI, số chủ đề thật), nên ARI/NMI của cấu hình tốt nhất có phần lạc quan so với một bài toán phân cụm hoàn toàn không có nhãn. Nếu chỉ dựa vào chỉ số nội tại, Silhouette sẽ chọn k = 10–12 (mục 4).
+
 ## 6. Bàn giao
 
 | Đầu ra | Cách dùng |
 |---|---|
 | `outputs/tables/experiments.csv` | Mỗi dòng 1 thí nghiệm: `representation, n_components, model, k` + 6 chỉ số (cả 5 mức số chiều) |
 | `outputs/tables/cluster_labels.csv` | `id, representation, n_components, model, k, cluster` cho 12 thí nghiệm ở mục 4. Cấu hình tốt nhất: lọc `representation == "bow_lsa"`, `model == "kmeans"`, `k == 6` |
-| Tâm cụm / bài làm tâm (TV5) | `build_and_save_all_features(n_components=10)` → `X = load_features("bow_lsa")` → `run_kmeans(X, 6)` trả về `(nhãn, tâm cụm, inertia)`; K-Medoids: `run_kmedoids(X, 6)[1]` là chỉ số bài làm tâm |
+| Tâm cụm / bài làm tâm (TV5) | `X = load_features("bow_lsa")` (10 chiều theo `config`) → `run_kmeans(X, 6)` trả về `(nhãn, tâm cụm, inertia)`; K-Medoids: `run_kmedoids(X, 6)[1]` là chỉ số bài làm tâm |
 
-**Lưu ý số chiều:** `config.LSA_COMPONENTS` vẫn là 80, nên máy mới clone gọi `load_features` sẽ ra ma trận 80 chiều. Cần tạo lại bằng `build_and_save_all_features(n_components=10)` (notebook 03 đã làm ở ô cuối), hoặc nhóm thống nhất đổi `config.LSA_COMPONENTS = 10`.
+**Số chiều:** `config.LSA_COMPONENTS = 10`. `load_features(name)` luôn trả về đúng số chiều này: nếu file trong `models/` sai kích thước (ví dụ còn bản 80 chiều cũ, hoặc vừa quét số chiều khác trong notebook 03) thì tự tạo lại. Muốn số chiều khác thì truyền rõ `load_features(name, n_components=20)`.
 
 ## 7. Chạy lại
 

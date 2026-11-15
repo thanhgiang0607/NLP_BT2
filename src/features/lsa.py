@@ -5,6 +5,7 @@ Phụ trách: Gia Khang
 from pathlib import Path
 import joblib
 import numpy as np
+import pandas as pd
 from sklearn.decomposition import TruncatedSVD
 
 from src import config
@@ -67,24 +68,51 @@ def build_and_save_all_features(
     return stats
 
 
-def load_features(name: str, models_dir: Path = config.MODELS_DIR) -> np.ndarray:
+def _expected_shape(name: str, n_components: int) -> tuple[int, int]:
+    """Kích thước ma trận phải có: (số bài trong articles_clean.csv, số chiều)."""
+    n_docs = len(pd.read_csv(config.ARTICLES_CLEAN_CSV, usecols=["id"]))
+    if name == "embedding":
+        return n_docs, config.W2V_SIZE
+    return n_docs, min(n_components, n_docs - 1)  # fit_lsa giới hạn tối đa n_docs - 1
+
+
+def load_features(
+    name: str, n_components: int | None = None, models_dir: Path = config.MODELS_DIR
+) -> np.ndarray:
     """Hàm chuẩn cho Bước 5 nạp ma trận đặc trưng dày (chưa chuẩn hóa L2).
 
     Args:
         name: Một trong các giá trị {'bow_lsa', 'tfidf_lsa', 'embedding'}.
+        n_components: Số chiều LSA mong muốn (bỏ qua với 'embedding').
+            Mặc định config.LSA_COMPONENTS.
     Returns:
         np.ndarray kích thước (N_articles, D), thứ tự dòng khớp articles_clean.csv.
+
+    Chưa có file, hoặc file trong models/ sai kích thước (khác số chiều mong muốn, hoặc khác số bài
+    hiện tại) thì tạo lại cả 3 ma trận. Nhờ vậy mọi máy nhận cùng một ma trận, không phụ thuộc
+    trước đó đã chạy notebook nào.
     """
     valid_names = {"bow_lsa", "tfidf_lsa", "embedding"}
     if name not in valid_names:
         raise ValueError(f"Tên đặc trưng '{name}' không hợp lệ. Chọn một trong: {valid_names}")
 
+    n_components = config.LSA_COMPONENTS if n_components is None else n_components
+    expected = _expected_shape(name, n_components)
     file_path = models_dir / f"{name}_matrix.npy"
+
     if not file_path.exists():
         # models/ không đi theo git: máy mới clone về thì tự tạo đủ 3 ma trận
-        print(f"Chưa có {file_path.name}, đang tạo đặc trưng (python -m src.features.lsa)...")
-        build_and_save_all_features(models_dir=models_dir)
-    return np.load(file_path)
+        print(f"Chưa có {file_path.name}, đang tạo đặc trưng {n_components} chiều...")
+        build_and_save_all_features(n_components=n_components, models_dir=models_dir)
+    else:
+        shape = np.load(file_path, mmap_mode="r").shape
+        if shape != expected:
+            print(f"{file_path.name} có kích thước {shape}, cần {expected}: đang tạo lại đặc trưng...")
+            build_and_save_all_features(n_components=n_components, models_dir=models_dir)
+
+    X = np.load(file_path)
+    assert X.shape == expected, f"{name}: kích thước {X.shape}, mong đợi {expected}"
+    return X
 
 
 if __name__ == "__main__":

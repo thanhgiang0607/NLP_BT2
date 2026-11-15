@@ -14,6 +14,8 @@
 
 ### 2. Kết quả thực nghiệm & Chọn số chiều
 
+> **Cập nhật sau phần 4:** số chiều LSA cuối cùng là **10** (`config.LSA_COMPONENTS = 10`), chọn theo chất lượng phân cụm ở `bao_cao_ket_qua/04_phan_cum_danh_gia.md`. Bảng dưới đây giữ số liệu 80 chiều của lần chọn ban đầu theo phương sai giữ lại. Word2Vec vẫn 80 chiều (`config.W2V_SIZE`).
+
 #### a. Thống kê các ma trận biểu diễn và giảm chiều (N = 119 bài báo)
 Dựa trên biểu đồ phương sai tích lũy (*Cumulative Explained Variance*) trong `notebooks/02_representation_lsa.ipynb` (`outputs/figures/lsa_explained_variance.png`), mốc **`n_components = 80`** được chọn vì cân bằng tốt giữa khả năng nén chiều (giảm từ hàng nghìn chiều xuống 80 chiều) và tỷ lệ thông tin giữ lại (> 83% cho cả hai phương pháp):
 
