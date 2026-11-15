@@ -1,7 +1,6 @@
 """Trích xuất đặc trưng LSA (TruncatedSVD) cho BoW và TF-IDF, đồng thời cung cấp hàm load_features().
 
 Phụ trách: Gia Khang
-TODO: đang duyệt.
 """
 from pathlib import Path
 import joblib
@@ -30,18 +29,20 @@ def fit_lsa(
 def build_and_save_all_features(
     n_components: int = config.LSA_COMPONENTS, models_dir: Path = config.MODELS_DIR
 ) -> dict:
-    """Tạo và lưu đủ 3 ma trận đặc trưng: bow_lsa, tfidf_lsa, embedding."""
+    """Tạo và lưu đủ 3 ma trận đặc trưng: bow_lsa, tfidf_lsa, embedding.
+
+    Luôn tạo lại từ articles_clean.csv (chỉ mất vài giây) thay vì dùng lại file cũ trong models/,
+    để khi tiền xử lý hoặc config thay đổi thì đặc trưng không bị lỗi thời.
+    """
     models_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Tự động chạy Bước 3 nếu chưa có sẵn file bow_matrix.npz hoặc tfidf_matrix.npz
-    if not (models_dir / "bow_matrix.npz").exists() or not (models_dir / "tfidf_matrix.npz").exists():
-        print("Chưa tìm thấy ma trận BoW/TF-IDF, đang tự động tạo từ Bước 3...")
-        build_bow_tfidf()
+
+    # Bước 3: BoW + TF-IDF (build_and_save_all luôn lưu vào config.MODELS_DIR)
+    build_bow_tfidf()
 
     stats = {}
 
     # 1. BoW + LSA
-    X_bow, _ = load_matrix("bow", models_dir)
+    X_bow, _ = load_matrix("bow")
     X_bow_lsa, svd_bow = fit_lsa(X_bow, n_components=n_components)
     np.save(models_dir / "bow_lsa_matrix.npy", X_bow_lsa)
     joblib.dump(svd_bow, models_dir / "bow_lsa_svd.joblib")
@@ -51,7 +52,7 @@ def build_and_save_all_features(
     }
 
     # 2. TF-IDF + LSA
-    X_tfidf, _ = load_matrix("tfidf", models_dir)
+    X_tfidf, _ = load_matrix("tfidf")
     X_tfidf_lsa, svd_tfidf = fit_lsa(X_tfidf, n_components=n_components)
     np.save(models_dir / "tfidf_lsa_matrix.npy", X_tfidf_lsa)
     joblib.dump(svd_tfidf, models_dir / "tfidf_lsa_svd.joblib")
@@ -60,13 +61,8 @@ def build_and_save_all_features(
         "explained_variance_ratio_sum": round(float(svd_tfidf.explained_variance_ratio_.sum()), 4),
     }
 
-    # 3. Word Embedding (nếu chưa có file .npy thì chạy build)
-    emb_path = models_dir / "embedding_matrix.npy"
-    if not emb_path.exists():
-        stats["embedding"] = build_and_save_embedding(vector_size=n_components, models_dir=models_dir)
-    else:
-        X_emb = np.load(emb_path)
-        stats["embedding"] = {"shape": list(X_emb.shape)}
+    # 3. Word Embedding (số chiều riêng, không phụ thuộc số chiều LSA)
+    stats["embedding"] = build_and_save_embedding(vector_size=config.W2V_SIZE, models_dir=models_dir)
 
     return stats
 
@@ -85,9 +81,9 @@ def load_features(name: str, models_dir: Path = config.MODELS_DIR) -> np.ndarray
 
     file_path = models_dir / f"{name}_matrix.npy"
     if not file_path.exists():
-        raise FileNotFoundError(
-            f"Không tìm thấy {file_path}. Hãy chạy `python -m src.features.lsa` trước."
-        )
+        # models/ không đi theo git: máy mới clone về thì tự tạo đủ 3 ma trận
+        print(f"Chưa có {file_path.name}, đang tạo đặc trưng (python -m src.features.lsa)...")
+        build_and_save_all_features(models_dir=models_dir)
     return np.load(file_path)
 
 

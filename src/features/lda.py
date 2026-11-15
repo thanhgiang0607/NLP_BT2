@@ -1,7 +1,6 @@
 """Mô hình LDA (gensim) chạy trên tập từ vựng để đối chiếu với LSA và trích xuất top từ khóa.
 
 Phụ trách: Gia Khang
-TODO: đang duyệt.
 """
 from pathlib import Path
 import joblib

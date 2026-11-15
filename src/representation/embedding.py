@@ -1,7 +1,6 @@
 """Word2Vec tự train trên tập tin tức; vector bài = trung bình vector từ.
 
 Phụ trách: Gia Khang
-TODO: đang duyệt.
 """
 from pathlib import Path
 import numpy as np
@@ -14,7 +13,7 @@ from src.representation.tokens import split_tokens
 
 def train_word2vec(
     tokenized_docs: list[list[str]],
-    vector_size: int = config.LSA_COMPONENTS,
+    vector_size: int = config.W2V_SIZE,
     window: int = 5,
     min_count: int = 2,
     epochs: int = 30,
@@ -52,7 +51,7 @@ def build_embedding_matrix(
 
 
 def build_and_save_embedding(
-    vector_size: int = config.LSA_COMPONENTS, models_dir: Path = config.MODELS_DIR
+    vector_size: int = config.W2V_SIZE, models_dir: Path = config.MODELS_DIR
 ) -> dict:
     """Pipeline: đọc corpus -> train Word2Vec -> tạo ma trận -> lưu vào models/."""
     models_dir.mkdir(parents=True, exist_ok=True)

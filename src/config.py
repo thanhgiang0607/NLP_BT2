@@ -45,5 +45,8 @@ NGRAM_RANGE = (1, 2)
 # LSA
 LSA_COMPONENTS = 80
 
+# Word2Vec (tách riêng khỏi LSA: đổi số chiều LSA không làm đổi Word2Vec)
+W2V_SIZE = 80
+
 # Phân cụm
 K_RANGE = range(2, 13)
