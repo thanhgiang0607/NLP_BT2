@@ -59,6 +59,8 @@ Chi tiết từng bước xem [Việc của TV4](#việc-của-tv4-phân-cụm--
 | App Streamlit hoàn chỉnh | `app/streamlit_app.py` (chọn biểu diễn/mô hình/k, scatter, wordcloud, tên chủ đề, dự đoán bài mới/URL) |
 | Thao tác máy khi demo | Demo trực tiếp + `reports/demo_backup.mp4` |
 
+Chi tiết từng bước xem [Việc của TV5](#việc-của-tv5-sinh-tên-chủ-đề--demo).
+
 ---
 
 ## Phụ thuộc giữa các mảng
@@ -172,6 +174,67 @@ Bắt đầu được ngay: `load_features` của TV3 đã có trên `main`, má
 | Nhãn cụm của cấu hình tốt nhất | TV2: scatter, wordcloud, confusion matrix theo cụm |
 | Nhãn cụm + tâm cụm / bài làm tâm | TV5: top từ khóa, 3–5 bài gần tâm gửi Gemini |
 | `experiments.csv` | Báo cáo, slide |
+
+## Việc của TV5 (sinh tên chủ đề + demo)
+
+Bắt đầu được ngay: cấu hình tốt nhất đã chốt ở phần 4 là **BoW + LSA 10 chiều + K-Means, k = 6** (`config.LSA_COMPONENTS = 10`). Cần `GEMINI_API_KEY` trong file `.env` (copy từ `.env.example`, không commit `.env`).
+
+**Lấy cụm của cấu hình tốt nhất** (đã kiểm tra: khớp 100% `cluster_labels.csv`):
+
+```python
+from src.features.lsa import load_features
+from src.clustering.kmeans import run_kmeans
+
+X = load_features("bow_lsa")              # (119, 10), đúng số chiều theo config
+labels, centers, _ = run_kmeans(X, 6)     # centers nằm trong không gian đã chuẩn hóa L2
+```
+
+**1. `src/topic_naming/keywords.py`: từ khóa mỗi cụm**
+- Top 10–15 từ mỗi cụm: trung bình TF-IDF của các bài trong cụm. Dùng lại `top_terms(X_tfidf, vec_tfidf, labels, n=15)` trong `src/representation/bow_tfidf.py`, với `X_tfidf, vec_tfidf = load_matrix("tfidf")`.
+- 3–5 bài gần tâm cụm nhất: tính cosine giữa `normalize(X)` và `centers`, lấy các bài cùng cụm có độ tương đồng cao nhất. Gửi Gemini **tiêu đề + đoạn đầu** (khoảng 100–150 từ) của bài, không gửi cả bài.
+
+**2. `src/topic_naming/gemini_namer.py`: đặt tên bằng Gemini (phần chính)**
+- Prompt gồm từ khóa + các bài gần tâm. Yêu cầu Gemini trả về **JSON** `{"name": "...", "description": "..."}`: tên chủ đề ngắn 2–4 từ, mô tả 1–2 câu.
+- **Không** đưa danh sách 6 nhãn thật vào prompt, nếu không Gemini chỉ chép lại nhãn, việc so với nhãn thật mất ý nghĩa.
+- Lưu kết quả vào `outputs/topic_names/bow_lsa_kmeans_k6.json` dạng `{cluster: {name, description, keywords}}`. App đọc file này, **không gọi Gemini mỗi lần mở app** (tốn quota, chậm, lỗi mạng lúc thuyết trình).
+
+**3. `src/topic_naming/spacy_np.py`: spaCy (bổ trợ)**
+- spaCy chưa có model tiếng Việt chính thức: dùng `spacy.blank("vi")` + pyvi để tách từ, đếm các cụm danh từ phổ biến mỗi cụm. Ghi trong báo cáo là phần bổ trợ, đối chiếu với từ khóa TF-IDF.
+
+**4. So tên chủ đề với nhãn thật**
+- `outputs/tables/topic_vs_label.csv`: `cluster, gemini_name, chu_de_chiem_da_so, ti_le`. Lấy chủ đề chiếm đa số mỗi cụm bằng `contingency()` trong `src/evaluation/metrics.py`. Bảng chéo của cấu hình tốt nhất có sẵn ở báo cáo phần 4, mục 5.
+
+**5. `app/streamlit_app.py`: demo**
+- Chọn biểu diễn / mô hình / k → hiện scatter (`plots.plot_scatter_2d`), wordcloud mỗi cụm (`plots.plot_wordcloud_grid`), bảng tên chủ đề.
+- Dán bài mới hoặc URL → dự đoán cụm và tên chủ đề. Bài mới phải đi qua **đúng các bước như lúc huấn luyện** (đã kiểm tra: đưa lại 119 bài qua cách này khớp 100% nhãn cụm):
+
+  ```python
+  import joblib, numpy as np
+  from sklearn.preprocessing import normalize
+  from src import config
+  from src.preprocessing.build_clean import preprocess_text
+  from src.preprocessing.stopwords import load_stopwords
+
+  vec = joblib.load(config.MODELS_DIR / "bow_vectorizer.joblib")
+  svd = joblib.load(config.MODELS_DIR / "bow_lsa_svd.joblib")
+
+  def predict(title: str, content: str) -> int:
+      tokens = " ".join(preprocess_text(f"{title}. {content}", load_stopwords()))
+      z = normalize(svd.transform(vec.transform([tokens])))
+      return int(np.argmax(z @ normalize(centers).T))   # cụm có tâm gần nhất
+  ```
+- Model K-Means chưa được lưu: fit lại khi app khởi động (dưới 1 giây) và cache bằng `@st.cache_resource`, hoặc lưu `centers` vào `models/`.
+- Dán URL: **không** dùng thẳng `parse_article` trong `src/crawl/crawler.py` (hàm này bắt buộc truyền chủ đề và bỏ bài nếu chuyên mục không khớp). Dùng `newspaper3k`, hoặc tải trang bằng `crawler.fetch(url)` rồi lấy tiêu đề / nội dung theo `SELECTORS` trong `src/crawl/sources.py` (hỗ trợ 4 báo đã crawl).
+- Có chế độ dự phòng khi không có mạng: app vẫn chạy với tên chủ đề đã lưu sẵn ở bước 2.
+
+**6. Báo cáo `bao_cao_ket_qua/05_sinh_chu_de_demo.md`** theo mẫu các phần trước, kèm ảnh chụp app.
+
+**Bàn giao**
+
+| Đầu ra của TV5 | Ai dùng |
+|---|---|
+| `outputs/topic_names/*.json`, `topic_vs_label.csv` | Báo cáo, slide |
+| App Streamlit chạy được | TV1 kiểm thử trên máy sạch, quay `reports/demo_backup.mp4` |
 
 ## Chưa phân công
 
