@@ -15,6 +15,7 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.manifold import TSNE
 
 from src import config
+from src.evaluation.metrics import contingency, purity
 
 # Bảng màu 12 màu, phân biệt được cả khi in đen trắng hoặc người bị mù màu
 PALETTE = ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7",
@@ -233,12 +234,6 @@ def idf_weights(vectorizer) -> dict:
 
 
 # ---------------------------------------------------------------- Confusion matrix
-def contingency(true_labels, cluster_labels) -> pd.DataFrame:
-    """Bảng chéo: mỗi hàng là một cụm, mỗi cột là một chủ đề thật, ô là số bài."""
-    return pd.crosstab(pd.Series(cluster_labels, name="Cụm"),
-                       pd.Series(true_labels, name="Chủ đề thật"))
-
-
 def plot_confusion_matrix(true_labels, cluster_labels, name=None, title=None, normalize=False):
     """Heatmap so cụm với chủ đề thật. Cụm tốt thì mỗi hàng chỉ có 1 ô đậm."""
     ct = contingency(true_labels, cluster_labels)
@@ -255,9 +250,3 @@ def plot_confusion_matrix(true_labels, cluster_labels, name=None, title=None, no
     ax.set_ylabel("Cụm")
     plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
     return _save(fig, name)
-
-
-def purity(true_labels, cluster_labels) -> float:
-    """Purity = số bài thuộc chủ đề chiếm nhiều nhất của mỗi cụm, cộng lại, chia tổng số bài."""
-    ct = contingency(true_labels, cluster_labels)
-    return float(ct.max(axis=1).sum() / ct.values.sum())
