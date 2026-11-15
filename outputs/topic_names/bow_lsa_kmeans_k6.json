@@ -1,0 +1,128 @@
+{
+  "0": {
+    "name": "Công nghệ toàn cầu",
+    "description": "Tổng hợp các chuyển động nổi bật của các tập đoàn công nghệ lớn như Apple, Microsoft, Amazon và Nvidia. Các bài viết đề cập đến sự cố hạ tầng, sản phẩm mới và những diễn biến xung quanh các lãnh đạo công nghệ thế giới.",
+    "keywords": [
+      "công_ty",
+      "nvidia",
+      "huang",
+      "microsoft",
+      "mỹ",
+      "hãng",
+      "dùng",
+      "ceo",
+      "sự_cố",
+      "nhà",
+      "jensen_huang",
+      "jensen",
+      "usd",
+      "apple",
+      "công_nghệ"
+    ]
+  },
+  "1": {
+    "name": "Giải trí nghệ thuật",
+    "description": "Tổng hợp các tin tức nổi bật xoay quanh đời sống nghệ sĩ, phim ảnh và các chương trình nghệ thuật sân khấu trong nước và quốc tế.",
+    "keywords": [
+      "khán_giả",
+      "diễn_viên",
+      "phim",
+      "nghệ_sĩ",
+      "nam",
+      "ca_sĩ",
+      "nữ",
+      "hát",
+      "vai",
+      "sân_khấu",
+      "mang",
+      "lời",
+      "nhân_vật",
+      "con",
+      "tên"
+    ]
+  },
+  "2": {
+    "name": "Y tế sức khỏe",
+    "description": "Tổng hợp các ca điều trị bệnh lý, cấp cứu ngoại khoa cùng lời khuyên y khoa từ bác sĩ chuyên khoa. Nội dung giúp người đọc nâng cao kiến thức chăm sóc sức khỏe và phòng ngừa các rủi ro y tế.",
+    "keywords": [
+      "bác_sĩ",
+      "bệnh_viện",
+      "điều_trị",
+      "người_bệnh",
+      "cơ_thể",
+      "bệnh_nhân",
+      "bệnh",
+      "tăng",
+      "nguy_cơ",
+      "y_tế",
+      "khám",
+      "thuốc",
+      "tổn_thương",
+      "máu",
+      "khoa"
+    ]
+  },
+  "3": {
+    "name": "Bóng đá Việt Nam",
+    "description": "Tổng hợp tin tức về các trận đấu giao hữu, kế hoạch chuẩn bị và các giải đấu quốc tế liên quan đến đội tuyển bóng đá Việt Nam.",
+    "keywords": [
+      "trận",
+      "hlv",
+      "việt_nam",
+      "đội_tuyển",
+      "đội",
+      "trận_đấu",
+      "bóng",
+      "giải",
+      "asian_cup",
+      "đội bóng",
+      "thi_đấu",
+      "giao_hữu",
+      "bóng_đá",
+      "clb",
+      "cầu_thủ"
+    ]
+  },
+  "4": {
+    "name": "Kinh tế thị trường",
+    "description": "Cập nhật các biến động về giá cả hàng hóa, chính sách tài chính ngân hàng, thuế và hoạt động khuyến mãi tiêu dùng.",
+    "keywords": [
+      "đồng",
+      "thuế",
+      "giá",
+      "tiền",
+      "nộp",
+      "tỉ đồng",
+      "tăng",
+      "tỉ",
+      "ngân_sách",
+      "thị_trường",
+      "giảm",
+      "thanh_tra",
+      "nhà_nước",
+      "tiêu_dùng",
+      "mức"
+    ]
+  },
+  "5": {
+    "name": "Quản lý nhà nước",
+    "description": "Tổng hợp các chỉ đạo, chính sách mới và hoạt động quản lý, điều hành của các cơ quan chức năng trên nhiều lĩnh vực đời sống, kinh tế và xã hội.",
+    "keywords": [
+      "tỉnh",
+      "bộ",
+      "quản_lý",
+      "tổ_chức",
+      "địa_phương",
+      "sở",
+      "công_an",
+      "yêu_cầu",
+      "trách_nhiệm",
+      "công_nghệ",
+      "cơ_quan",
+      "ubnd",
+      "pháp_luật",
+      "số",
+      "đơn_vị"
+    ]
+  }
+}
