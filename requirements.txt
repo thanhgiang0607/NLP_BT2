@@ -13,7 +13,7 @@ pyvi
 numpy
 pandas
 scikit-learn
-scikit-learn-extra
+kmedoids          # K-Medoids (PAM); thay scikit-learn-extra vì bản này lỗi import với numpy 2.x
 gensim
 umap-learn
 

@@ -46,7 +46,9 @@
 |---|---|
 | Code K-Means, K-Medoids, các chỉ số đánh giá | `src/clustering/*.py`, `src/evaluation/metrics.py` |
 | Chạy đủ 6 thí nghiệm, chọn k | `notebooks/03_clustering_experiments.ipynb`, biểu đồ Elbow/Silhouette trong `outputs/figures/` |
-| Bảng so sánh 6 thí nghiệm + cấu hình tốt nhất | `outputs/tables/experiments.csv`, nhãn cụm của cấu hình tốt nhất |
+| Bảng so sánh 6 thí nghiệm + cấu hình tốt nhất | `outputs/tables/experiments.csv`, `outputs/tables/cluster_labels.csv`, `bao_cao_ket_qua/04_phan_cum_danh_gia.md` |
+
+Chi tiết từng bước xem [Việc của TV4](#việc-của-tv4-phân-cụm--đánh-giá).
 
 ## 5. Code: sinh chủ đề + demo — _TV5_
 
@@ -83,7 +85,7 @@ TV3 và TV4 **làm song song được**. TV2 đã xong `articles_clean.csv` và 
 
 | Việc của TV4 | Cần chờ TV3? |
 |---|---|
-| Code K-Means, K-Medoids (`metric="cosine"`) | Không |
+| Code K-Means, K-Medoids (khoảng cách cosine) | Không |
 | Code các chỉ số: Silhouette, Davies-Bouldin, Calinski-Harabasz, ARI, NMI, Purity | Không |
 | Code chọn k (Elbow, Silhouette) | Không |
 | Chạy thử toàn bộ code | Không. Tự tạo tạm TF-IDF + `TruncatedSVD(100)` từ `src/representation/bow_tfidf.py` |
@@ -116,9 +118,60 @@ Trong lúc TV3 chưa xong, TV4 viết một hàm tạm **cùng tên, cùng kiể
 
 `purity()` và `contingency()` hiện nằm trong `src/visualization/plots.py`. TV4 chuyển sang `src/evaluation/metrics.py`, rồi `plots.py` import lại từ đó, để cả nhóm dùng chung một cách tính.
 
-### 4. Cài K-Medoids sớm
+### 4. Thư viện K-Medoids: dùng `kmedoids`
 
-`sklearn_extra` (KMedoids) hay lỗi khi cài trên Python mới. TV4 cài thử ngay ngày đầu trong `.venv` Python 3.12 của nhóm. Không cài được thì chuyển sang thư viện `kmedoids` hoặc tự viết PAM, đừng để đến lúc chạy thí nghiệm mới phát hiện.
+Đã thử: `scikit-learn-extra` cài được nhưng **import lỗi** (`numpy.core.multiarray failed to import`) vì được biên dịch cho numpy 1.x, còn nhóm dùng numpy 2.x. Đã đổi sang thư viện **`kmedoids`** trong `requirements.txt` (chạy tốt, kết quả lặp lại được). Cách dùng xem bước 2 bên dưới.
+
+## Việc của TV4 (phân cụm + đánh giá)
+
+Bắt đầu được ngay: `load_features` của TV3 đã có trên `main`, máy mới clone tự tạo đủ 3 ma trận. Cài thư viện: `pip install -r requirements.txt` (có `kmedoids`).
+
+**1. `src/evaluation/metrics.py`: chỉ số đánh giá**
+- Chuyển `contingency()` và `purity()` từ `src/visualization/plots.py` sang đây; `plots.py` import lại từ file này.
+- Viết `evaluate(X, labels, true_labels) -> dict` trả về 6 chỉ số:
+  - Nội tại (không cần nhãn): Silhouette (`metric="cosine"`), Davies-Bouldin, Calinski-Harabasz.
+  - So với nhãn gốc: ARI, NMI, Purity.
+- DB và CH đo bằng khoảng cách Euclid: tính trên ma trận **đã chuẩn hóa L2** để nhất quán với cosine.
+
+**2. `src/clustering/kmeans.py`, `src/clustering/kmedoids.py`**
+- `run_kmeans(X, k)`: chuẩn hóa L2 → `KMeans(k, n_init=10, random_state=config.RANDOM_STATE)`.
+- `run_kmedoids(X, k)`: khoảng cách cosine → K-Medoids PAM:
+
+  ```python
+  import kmedoids
+  from sklearn.metrics.pairwise import cosine_distances
+
+  D = cosine_distances(X)  # (119, 119)
+  km = kmedoids.KMedoids(k, metric="precomputed", method="pam",
+                         random_state=config.RANDOM_STATE).fit(D)
+  km.labels_, km.medoid_indices_
+  ```
+- Cả hai trả về nhãn cụm **và** tâm cụm (K-Means) / chỉ số bài làm tâm (K-Medoids). TV5 cần phần này để chọn bài gần tâm gửi Gemini.
+
+**3. `src/clustering/select_k.py`: chọn k**
+- Chạy k ∈ `config.K_RANGE` (2–12), vẽ Elbow (inertia) và Silhouette theo k → `outputs/figures/`.
+
+**4. `notebooks/03_clustering_experiments.ipynb`: thí nghiệm**
+- 3 biểu diễn × 2 mô hình = 6 thí nghiệm, mỗi thí nghiệm chạy với **k chọn ở bước 3** và **k = 6** (số chủ đề thật).
+- **Quét số chiều LSA** {10, 20, 30, 50, 80} cho BoW+LSA và TF-IDF+LSA (`build_and_save_all_features(n_components=...)`). Đo nhanh: TF-IDF+LSA 20 chiều tốt hơn hẳn 80 chiều (ARI 0,443 so với 0,335), xem báo cáo phần 3.
+- Lưu kết quả:
+
+  | File | Nội dung |
+  |---|---|
+  | `outputs/tables/experiments.csv` | Mỗi dòng 1 thí nghiệm: `representation, n_components, model, k` + 6 chỉ số |
+  | `outputs/tables/cluster_labels.csv` | `id, representation, model, k, cluster` (TV2, TV5 dùng) |
+
+**5. Chọn cấu hình tốt nhất + báo cáo `bao_cao_ket_qua/04_phan_cum_danh_gia.md`**
+- Không chọn chỉ theo ARI/NMI: nhãn gốc có nhiễu (bài nổ gas xếp vào Sức khỏe, Nvidia rải ở 3 chủ đề, xem báo cáo phần 1). Xét cùng lúc chỉ số nội tại, chỉ số so với nhãn và mức dễ hiểu của cụm.
+- Mức tham khảo từ phép thử nhanh: K-Means k = 6 cho ARI khoảng 0,33–0,47; K-Medoids trên embedding ARI 0,39. Đây là mức hợp lý với 119 bài có nhãn nhiễu, không phải dấu hiệu code sai.
+
+**Bàn giao**
+
+| Đầu ra của TV4 | Ai dùng |
+|---|---|
+| Nhãn cụm của cấu hình tốt nhất | TV2: scatter, wordcloud, confusion matrix theo cụm |
+| Nhãn cụm + tâm cụm / bài làm tâm | TV5: top từ khóa, 3–5 bài gần tâm gửi Gemini |
+| `experiments.csv` | Báo cáo, slide |
 
 ## Chưa phân công
 
